@@ -10,22 +10,25 @@ PIDFILE=/var/run/olcrtc.pid
 LOGTAG="olcrtc"
 
 start_service() {
-    local binary carrier transport room_id client_id key
+    local binary carrier transport mode room_id client_id key
     local socks_host socks_port socks_user socks_pass dns debug
     local vp8_fps vp8_batch
     local sei_fps sei_batch sei_frag sei_ack_ms
     local video_codec video_w video_h video_fps video_bitrate video_hw
     local video_qr_recovery video_qr_size video_tile_module video_tile_rs ffmpeg_bin
+    local yaml_path
 
     binary='/usr/bin/olcrtc'
+    yaml_path='/etc/olcrtc/client.yaml'
 
     config_load olcrtc
+    config_get mode             config mode             'cnc'
     config_get carrier          config carrier          'telemost'
     config_get transport        config transport        'vp8channel'
     config_get room_id          config room_id          ''
     config_get client_id        config client_id        ''
     config_get key              config key              ''
-    config_get socks_host       config socks_host       '0.0.0.0'
+    config_get socks_host       config socks_host       '127.0.0.1'
     config_get socks_port       config socks_port       '1080'
     config_get socks_user       config socks_user       ''
     config_get socks_pass       config socks_pass       ''
@@ -54,73 +57,83 @@ start_service() {
         return 1
     fi
 
-    if [ -z "$client_id" ]; then
-        logger -t "$LOGTAG" "Ошибка: не задан Client ID — запуск невозможен"
-        return 1
-    fi
-
     if [ ! -x "$binary" ]; then
         logger -t "$LOGTAG" "Ошибка: бинарник $binary не найден или не исполняемый"
         return 1
     fi
 
-    logger -t "$LOGTAG" "Запуск клиента: binary=$binary carrier=$carrier transport=$transport порт=$socks_port"
+    mkdir -p "$(dirname "$yaml_path")"
 
-    procd_open_instance
-    procd_set_param command "$binary" \
-        -mode cnc \
-        -carrier "$carrier" \
-        -transport "$transport" \
-        -id "$room_id" \
-        -client-id "$client_id" \
-        -key "$key" \
-        -link direct \
-        -data data \
-        -dns "$dns" \
-        -socks-host "$socks_host" \
-        -socks-port "$socks_port"
+    cat > "$yaml_path" <<EOF
+mode: ${mode}
+auth:
+  provider: "${carrier}"
+room:
+  id: "${room_id}"
+crypto:
+  key: "${key}"
+net:
+  transport: "${transport}"
+  dns: "${dns}"
+socks:
+  host: "${socks_host}"
+  port: ${socks_port}
+EOF
 
-    [ -n "$socks_user" ] && procd_append_param command -socks-user "$socks_user"
-    [ -n "$socks_pass" ] && procd_append_param command -socks-pass "$socks_pass"
-    [ "$debug" = "1" ]   && procd_append_param command --debug
+    [ -n "$socks_user" ] && printf '  user: "%s"\n' "$socks_user" >> "$yaml_path"
+    [ -n "$socks_pass" ] && printf '  pass: "%s"\n' "$socks_pass" >> "$yaml_path"
 
     case "$transport" in
         vp8channel)
-            procd_append_param command \
-                -vp8-fps "$vp8_fps" \
-                -vp8-batch "$vp8_batch"
+            cat >> "$yaml_path" <<EOF
+vp8:
+  fps: ${vp8_fps}
+  batch_size: ${vp8_batch}
+EOF
             ;;
         seichannel)
-            procd_append_param command \
-                -fps "$sei_fps" \
-                -batch "$sei_batch" \
-                -frag "$sei_frag" \
-                -ack-ms "$sei_ack_ms"
+            cat >> "$yaml_path" <<EOF
+sei:
+  fps: ${sei_fps}
+  batch_size: ${sei_batch}
+  fragment_size: ${sei_frag}
+  ack_timeout_ms: ${sei_ack_ms}
+EOF
             ;;
         videochannel)
-            procd_append_param command \
-                -video-codec "$video_codec" \
-                -video-w "$video_w" \
-                -video-h "$video_h" \
-                -video-fps "$video_fps" \
-                -video-bitrate "$video_bitrate" \
-                -video-hw "$video_hw" \
-                -ffmpeg "$ffmpeg_bin"
+            cat >> "$yaml_path" <<EOF
+video:
+  codec: "${video_codec}"
+  width: ${video_w}
+  height: ${video_h}
+  fps: ${video_fps}
+EOF
             case "$video_codec" in
                 qrcode)
-                    procd_append_param command \
-                        -video-qr-recovery "$video_qr_recovery" \
-                        -video-qr-size "$video_qr_size"
+                    cat >> "$yaml_path" <<EOF
+  qr_recovery: "${video_qr_recovery}"
+  qr_size: ${video_qr_size}
+EOF
                     ;;
                 tile)
-                    procd_append_param command \
-                        -video-tile-module "$video_tile_module" \
-                        -video-tile-rs "$video_tile_rs"
+                    cat >> "$yaml_path" <<EOF
+  tile_module: ${video_tile_module}
+  tile_rs: ${video_tile_rs}
+EOF
                     ;;
             esac
             ;;
     esac
 
+    if [ "$debug" = "1" ]; then
+        printf 'debug: true\n' >> "$yaml_path"
+    fi
+
+    logger -t "$LOGTAG" "Запуск клиента: binary=$binary mode=$mode provider=$carrier transport=$transport room=${room_id} port=$socks_port"
+    logger -t "$LOGTAG" "Важное: смешивание старых/новых сборок OlcRTC приводит к ошибке frame token mismatch; требуется одинаковая сборка на обоих концах"
+
+    procd_open_instance
+    procd_set_param command "$binary" "$yaml_path"
     procd_set_param respawn 3600 5 0
     procd_set_param stdout 1
     procd_set_param stderr 1

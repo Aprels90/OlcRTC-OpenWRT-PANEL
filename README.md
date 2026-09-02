@@ -1,5 +1,9 @@
 # Я БОЛЬШЕ НЕ ОБНОВЛЯЮ ЭТУ ПАНЕЛЬ, ОНА УСТАРЕВШАЯ. ЕСЛИ ВАМ НАДО ВЫ МОЖЕТЕ СДЕЛАТЬ ФОРК И ПОДДЕРЖИВАТЬ ЕЁ ДАЛЬШЕ, ПРОСТО В ИИ ЗАКИДЫВАЙТЕ РЕПОЗИТОРИЙ И АКТУАЛЬНЫЕ ДОКИ OLCRTC С ПРОСЬБОЙ ОБНОВИТЬ ПАНЕЛЬ, И ВСЁ ЧЁТЕНЬКО БУДЕТ
 
+> [!IMPORTANT]
+> Актуальный OlcRTC использует новый протокол OLC2 и YAML-конфиг. Если смешать старый и новый бинарники или старую и новую панель на разных концах туннеля, появляются ошибки вида `vp8channel: frame token mismatch ... (foreign client or noise)`.
+> Для корректной работы нужно обновить оба конца до одной версии OlcRTC и использовать одинаковый `transport`/`room`/`key`.
+
 # OlcRTC-OpenWRT
 
 Панель управления LuCI для запуска [OlcRTC](https://github.com/openlibrecommunity/olcrtc) в режиме клиента на роутере с OpenWRT.
@@ -48,10 +52,12 @@ OlcRTC запускается на роутере как SOCKS5-прокси.
 Подключитесь к роутеру по SSH и выполните:
 
 ```sh
-sh -c "$(wget -qO- https://raw.githubusercontent.com/tankionline2005/OlcRTC-OpenWRT/main/install.sh)"
+sh -c "$(wget -qO- https://raw.githubusercontent.com/Aprels90/OlcRTC-OpenWRT-PANEL/main/install.sh)"
 ```
 
-Скрипт спросит архитектуру устройства и скачает только нужный бинарник.  
+Скрипт устанавливает LuCI-панель и настройки OpenWRT, но сам бинарник OlcRTC должен быть актуальной сборкой из официального репозитория [openlibrecommunity/olcrtc](https://github.com/openlibrecommunity/olcrtc).
+Если у вас стоит старая сборка на одном из концов, `vp8channel`/`videochannel`/`seichannel` будут падать с `frame token mismatch` даже при правильных настройках.
+
 После установки откройте LuCI → **Службы → OlcRTC**.
 
 ### Быстрый старт через URI

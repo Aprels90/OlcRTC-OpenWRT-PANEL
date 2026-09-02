@@ -8,9 +8,9 @@
 
 set -e
 
-REPO_RAW="https://raw.githubusercontent.com/tankionline2005/OlcRTC-OpenWRT/main"
-BINARY_ARM64_URL="${REPO_RAW}/olcrtc-linux-arm64"
-BINARY_AMD64_URL="${REPO_RAW}/olcrtc-linux-amd64"
+REPO_RAW="https://raw.githubusercontent.com/Aprels90/OlcRTC-OpenWRT-PANEL/main"
+BINARY_ARM64_URL="https://github.com/openlibrecommunity/olcrtc/releases/latest/download/olcrtc-linux-arm64"
+BINARY_AMD64_URL="https://github.com/openlibrecommunity/olcrtc/releases/latest/download/olcrtc-linux-amd64"
 BINARY_DST="/usr/bin/olcrtc"
 INITD="/etc/init.d/olcrtc"
 UCI_CONF="/etc/config/olcrtc"
@@ -49,12 +49,32 @@ case "$ARCH_CHOICE" in
     *) BINARY_URL="$BINARY_ARM64_URL"; ARCH_NAME="ARM64" ;;
 esac
 
-# ── Скачиваем бинарник ────────────────────────────────────
-info "Скачиваем бинарник olcrtc (${ARCH_NAME})..."
-wget -q -O "$BINARY_DST" "$BINARY_URL" || \
-    error "Не удалось скачать бинарник с $BINARY_URL"
-chmod 755 "$BINARY_DST"
-info "Бинарник установлен: $BINARY_DST (${ARCH_NAME})"
+# ── Скачиваем бинарник из актуального upstream ───────────
+info "Проверяем официальный релиз OlcRTC (${ARCH_NAME})..."
+for candidate in \
+    "https://github.com/openlibrecommunity/olcrtc/releases/latest/download/olcrtc-linux-${ARCH_NAME}.tar.gz" \
+    "https://github.com/openlibrecommunity/olcrtc/releases/latest/download/olcrtc-linux-${ARCH_NAME}" \
+    "https://github.com/openlibrecommunity/olcrtc/releases/latest/download/olcrtc-${ARCH_NAME}"; do
+    if wget -q --spider "$candidate" 2>/dev/null; then
+        BINARY_URL="$candidate"
+        break
+    fi
+done
+
+if [ -n "$BINARY_URL" ]; then
+    info "Скачиваем бинарник olcrtc (${ARCH_NAME}) из upstream..."
+    wget -q -O "$BINARY_DST" "$BINARY_URL" || \
+        warn "Кэшированный релиз недоступен, необходимо собрать бинарник вручную из upstream"
+else
+    warn "Автоматический релиз не найден. Установите актуальный бинарник OlcRTC вручную из https://github.com/openlibrecommunity/olcrtc"
+fi
+
+if [ -x "$BINARY_DST" ] || [ -f "$BINARY_DST" ]; then
+    chmod 755 "$BINARY_DST" 2>/dev/null || true
+    info "Бинарник установлен: $BINARY_DST (${ARCH_NAME})"
+else
+    warn "Бинарник OlcRTC пока не установлен. Это панель LuCI, а реальный клиент должен быть взят из официального upstream проекта."
+fi
 
 # ── init.d скрипт ─────────────────────────────────────────
 info "Устанавливаем init.d скрипт..."
