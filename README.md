@@ -39,7 +39,7 @@ OlcRTC запускается на роутере как SOCKS5-прокси.
 
 ## Требования
 
-- OpenWRT с LuCI (проверено на OpenWrt 25.12.1 & LuCI 0.7.14)
+- OpenWRT с LuCI (проверено на OpenWrt 24.10 и OpenWrt 25.12.1 & LuCI 0.7.14)
 - Архитектура: **ARM64** (aarch64) или **AMD64** (x86-64) — выбирается при установке
 - Свободное место: ~21 МБ
 - Удалённый сервер (VPS) с запущенной серверной частью OlcRTC.
@@ -102,6 +102,16 @@ sh -c "$(wget -qO- https://raw.githubusercontent.com/Aprels90/OlcRTC-OpenWRT-PAN
 ---
 
 ## Удаление
+
+### Удаление Podkop
+
+Если Podkop больше не нужен, удалите его командой:
+
+```sh
+opkg remove luci-i18n-podkop-ru luci-app-podkop podkop
+```
+
+### Удаление панели OlcRTC
 
 ```sh
 sh -c "$(wget -qO- https://raw.githubusercontent.com/Aprels90/OlcRTC-OpenWRT-PANEL/main/uninstall.sh)"
