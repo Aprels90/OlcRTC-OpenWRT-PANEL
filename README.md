@@ -46,12 +46,18 @@ OlcRTC запускается на роутере как SOCKS5-прокси.
 
 ---
 
-## Установка на роутер
+## Установка панели на роутер
 
 Подключитесь к роутеру по SSH и выполните:
 
 ```sh
 sh -c "$(wget -qO- https://raw.githubusercontent.com/Aprels90/OlcRTC-OpenWRT-PANEL/main/install.sh)"
+```
+
+## Автоматическая установка и обновление Podkop
+
+```sh
+sh <(wget -O - https://raw.githubusercontent.com/itdoginfo/podkop/refs/heads/main/install.sh)
 ```
 
 Скрипт устанавливает LuCI-панель и скачивает подходящий актуальный бинарник OlcRTC из этого репозитория. Сборки уже подготовлены для ARM64 и AMD64.
