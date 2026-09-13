@@ -18,6 +18,7 @@ LUCI_MENU="/usr/share/luci/menu.d/luci-app-olcrtc.json"
 LUCI_ACL="/usr/share/rpcd/acl.d/luci-app-olcrtc.json"
 LUCI_VIEW_DIR="/www/luci-static/resources/view/olcrtc"
 LUCI_VIEW="${LUCI_VIEW_DIR}/main.js"
+BINARY_TMP="${BINARY_DST}.tmp.$$"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -50,15 +51,18 @@ case "$ARCH_CHOICE" in
 esac
 
 # ── Скачиваем бинарник OlcRTC из этого репозитория ────────
-info "Проверяем наличие бинарника OlcRTC (${ARCH_NAME})..."
 if [ -x "$BINARY_DST" ]; then
-    info "Бинарник уже установлен: $BINARY_DST"
+    info "Обновляем бинарник OlcRTC (${ARCH_NAME})..."
 else
-    info "Скачиваем актуальный бинарник OlcRTC (${ARCH_NAME})..."
-    wget -q -O "$BINARY_DST" "$BINARY_URL" || \
-        error "Не удалось скачать бинарник с $BINARY_URL"
-    chmod 755 "$BINARY_DST"
+    info "Скачиваем бинарник OlcRTC (${ARCH_NAME})..."
 fi
+rm -f "$BINARY_TMP"
+wget -q -O "$BINARY_TMP" "$BINARY_URL" || {
+    rm -f "$BINARY_TMP"
+    error "Не удалось скачать бинарник с $BINARY_URL"
+}
+chmod 755 "$BINARY_TMP"
+mv "$BINARY_TMP" "$BINARY_DST"
 
 info "Готово: $BINARY_DST (${ARCH_NAME})"
 
