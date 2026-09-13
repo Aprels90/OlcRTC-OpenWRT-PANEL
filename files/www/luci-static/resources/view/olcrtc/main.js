@@ -354,6 +354,7 @@ return view.extend({
     _transportParamInputs: null,
     _uriLabel            : null,
     _uriInput            : null,
+    _subscriptionInputTimer: null,
     _subsContainer       : null,
     _subscriptions       : null,   /* [{sectionName, url, blockEl, timer}] */
     _selectedServer      : null,   /* {data, card, normalStyle, values} */
@@ -1080,6 +1081,11 @@ return view.extend({
             input       : function (ev) {
                 var val = ev.target.value.trim();
 
+                if (self._subscriptionInputTimer) {
+                    clearTimeout(self._subscriptionInputTimer);
+                    self._subscriptionInputTimer = null;
+                }
+
                 if (!val) {
                     uriLabel.textContent    = '';
                     ev.target.style.outline = '';
@@ -1088,7 +1094,11 @@ return view.extend({
 
                 /* Ссылка на подписку */
                 if (val.indexOf('http://') === 0 || val.indexOf('https://') === 0) {
-                    self._addSubscription(val);
+                    self._subscriptionInputTimer = setTimeout(function () {
+                        self._subscriptionInputTimer = null;
+                        if (self._uriInput && self._uriInput.value.trim() === val)
+                            self._addSubscription(val);
+                    }, 500);
                     return;
                 }
 
