@@ -178,10 +178,13 @@ function parseOlcrtcUri(raw) {
     var roomId = rest.slice(0, i);
     rest = rest.slice(i + 1);
 
-    i = rest.indexOf('%');
-    if (i < 1) return null;
-    var key = rest.slice(0, i);
-    rest = rest.slice(i + 1);
+    var percentIdx = rest.indexOf('%');
+    var dollarIdx  = rest.indexOf('$');
+    if (percentIdx < 1 || (dollarIdx >= 1 && dollarIdx < percentIdx))
+        percentIdx = dollarIdx;
+    if (percentIdx < 1) return null;
+    var key = rest.slice(0, percentIdx);
+    rest = rest.slice(percentIdx + 1);
 
     i = rest.indexOf('$');
     var clientId = i !== -1 ? rest.slice(0, i) : rest;
