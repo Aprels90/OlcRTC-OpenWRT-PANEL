@@ -75,6 +75,10 @@ crypto:
 net:
   transport: "${transport}"
   dns: "${dns}"
+liveness:
+  interval: 10s
+  timeout: 15s
+  failures: 4
 socks:
   host: "${socks_host}"
   port: ${socks_port}
@@ -134,6 +138,8 @@ EOF
 
     procd_open_instance
     procd_set_param command "$binary" "$yaml_path"
+    # 0 means unlimited retries; this also restarts the client after a failed
+    # initial connection or handshake.
     procd_set_param respawn 3600 5 0
     procd_set_param stdout 1
     procd_set_param stderr 1
