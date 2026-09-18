@@ -322,10 +322,38 @@ var CARD_HDR   = 'font-size:0.7em;text-transform:uppercase;letter-spacing:0.08em
                  'margin-bottom:14px;padding-bottom:9px;font-weight:600;' +
                  'border-bottom:1px solid rgba(138,92,246,0.18);';
 var HR_STYLE   = 'border:none;border-top:1px solid rgba(138,92,246,0.12);margin:10px 0;';
+var RESPONSIVE_STYLE =
+    '.olcrtc-panel{max-width:1400px;margin:0 auto;overflow:hidden;}' +
+    '.olcrtc-card{min-width:0;}' +
+    '.olcrtc-form-row{min-width:0;}' +
+    '.olcrtc-form-row > div{min-width:0;}' +
+    '.olcrtc-form-row input,.olcrtc-form-row select{max-width:100%;box-sizing:border-box;}' +
+    '.olcrtc-server-cards > div{box-sizing:border-box;}' +
+    '@media (max-width:700px){' +
+        '.olcrtc-panel{padding:14px 10px!important;border-radius:10px!important;}' +
+        '.olcrtc-panel .olcrtc-title{font-size:1.15em!important;margin-bottom:16px!important;}' +
+        '.olcrtc-layout-row{display:block!important;margin-bottom:12px!important;}' +
+        '.olcrtc-layout-col{margin-bottom:12px;}' +
+        '.olcrtc-layout-col:last-child{margin-bottom:0;}' +
+        '.olcrtc-card{padding:14px 12px!important;border-radius:9px!important;}' +
+        '.olcrtc-form-row{display:block!important;margin-bottom:12px!important;}' +
+        '.olcrtc-form-row > label{display:block!important;padding-top:0!important;margin-bottom:5px;}' +
+        '.olcrtc-uri-line{display:block!important;}' +
+        '.olcrtc-uri-status{display:block;margin:5px 0 0!important;}' +
+        '.olcrtc-sub-header{align-items:stretch!important;}' +
+        '.olcrtc-sub-header > div{min-width:0;}' +
+        '.olcrtc-sub-header button{align-self:flex-start;}' +
+        '.olcrtc-server-cards{display:block!important;}' +
+        '.olcrtc-server-cards > div{max-width:none!important;min-width:0!important;width:100%;margin-bottom:8px;}' +
+        '.olcrtc-server-cards > div:last-child{margin-bottom:0;}' +
+        '.olcrtc-matrix-wrap{overflow-x:auto;}' +
+        '.olcrtc-matrix-wrap table{min-width:440px;}' +
+        '.olcrtc-logs{max-height:280px!important;font-size:0.72em!important;}' +
+    '}';
 
 function card(title, nodes) {
     var inner = Array.isArray(nodes) ? nodes : [nodes];
-    return E('div', { style: CARD_STYLE },
+    return E('div', { class: 'olcrtc-card', style: CARD_STYLE },
         (title ? [E('div', { style: CARD_HDR }, title)] : []).concat(inner)
     );
 }
@@ -533,6 +561,7 @@ return view.extend({
         }, 'Удалить подписку');
 
         var headerRow = E('div', {
+            class : 'olcrtc-sub-header',
             style: 'display:flex;justify-content:space-between;align-items:flex-start;' +
                    'flex-wrap:wrap;gap:8px;margin-bottom:6px;'
         }, [
@@ -554,7 +583,7 @@ return view.extend({
         }
 
         /* Карточки серверов */
-        var cardsWrap = E('div', { style: 'display:flex;flex-wrap:wrap;gap:10px;' });
+        var cardsWrap = E('div', { class: 'olcrtc-server-cards', style: 'display:flex;flex-wrap:wrap;gap:10px;' });
 
         sub.servers.forEach(function (server, idx) {
             var p    = server.parsed;
@@ -809,7 +838,7 @@ return view.extend({
 
         /* ── Helpers ────────────────────────────────────────── */
         function row(label, hint, inputEl) {
-            return E('div', { style: 'display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;' }, [
+            return E('div', { class: 'olcrtc-form-row', style: 'display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;' }, [
                 E('label', { style: 'flex:0 0 155px;font-size:0.82em;color:#b388ff;padding-top:7px;line-height:1.4;' }, label),
                 E('div', { style: 'flex:1;min-width:0;' }, [
                     inputEl,
@@ -1073,7 +1102,7 @@ return view.extend({
         self._updateVideoCodecRows(cfg.video_codec);
 
         /* ── URI / Подписки ─────────────────────────────────── */
-        var uriLabel = E('span', { style: 'margin-left:10px;font-size:0.85em;vertical-align:middle;' }, '');
+        var uriLabel = E('span', { class: 'olcrtc-uri-status', style: 'margin-left:10px;font-size:0.85em;vertical-align:middle;' }, '');
         self._uriLabel = uriLabel;
 
         var uriInput = E('input', {
@@ -1145,7 +1174,7 @@ return view.extend({
         self._subsContainer = subsContainer;
 
         var uriSection = card('Подключение по URI / Подписка', [
-            E('div', { style: 'margin-bottom:4px;' }, [uriInput, uriLabel]),
+            E('div', { class: 'olcrtc-uri-line', style: 'margin-bottom:4px;' }, [uriInput, uriLabel]),
             E('div', { style: 'font-size:0.82em;color:#7a5f99;margin-bottom:12px;' },
                 'Вставьте olcrtc://… — параметры заполнятся автоматически. ' +
                 'Или https:// ссылку на подписку в формате sub.md — добавится новый блок.'),
@@ -1154,7 +1183,7 @@ return view.extend({
 
         /* ── Карточки ─────────────────────────────────────────── */
         var matrixCard = card('Совместимость', [
-            E('div', { style: 'overflow-x:auto;' }, [matrixTable])
+            E('div', { class: 'olcrtc-matrix-wrap', style: 'overflow-x:auto;' }, [matrixTable])
         ]);
 
         var settingsCard = card('Базовые настройки подключения', [
@@ -1184,6 +1213,7 @@ return view.extend({
         ]);
 
         var logsEl = E('pre', {
+            class: 'olcrtc-logs',
             style: 'background:#0a0518;color:#c4a0ff;padding:12px;max-height:360px;overflow-y:auto;' +
                    'border-radius:6px;font-size:0.78em;white-space:pre-wrap;word-break:break-all;' +
                    'margin:0;border:1px solid rgba(138,92,246,0.2);'
@@ -1203,19 +1233,21 @@ return view.extend({
         });
 
         function flexRow(children, extra) {
-            return E('div', { style: 'display:flex;gap:16px;margin-bottom:16px;align-items:stretch;' + (extra || '') }, children);
+            return E('div', { class: 'olcrtc-layout-row', style: 'display:flex;gap:16px;margin-bottom:16px;align-items:stretch;' + (extra || '') }, children);
         }
         function col(flex, cardEl) {
-            return E('div', { style: 'flex:' + flex + ';min-width:0;' }, [cardEl]);
+            return E('div', { class: 'olcrtc-layout-col', style: 'flex:' + flex + ';min-width:0;' }, [cardEl]);
         }
 
         return E('div', {
+            class: 'olcrtc-panel',
             style: 'background:linear-gradient(160deg,#06011a 0%,#04091a 100%);' +
                    'border-radius:16px;padding:24px 28px;width:100%;box-sizing:border-box;'
         }, [
+            E('style', {}, RESPONSIVE_STYLE),
             /* Заголовок */
             E('div', { style: 'text-align:center;margin-bottom:24px;' }, [
-                E('div', { style: 'font-size:1.45em;font-weight:700;color:#e2d9f3;letter-spacing:0.02em;margin-bottom:6px;' }, 'OpenWRT OlcRTC Panel'),
+                E('div', { class: 'olcrtc-title', style: 'font-size:1.45em;font-weight:700;color:#e2d9f3;letter-spacing:0.02em;margin-bottom:6px;' }, 'OpenWRT OlcRTC Panel'),
                 E('div', { style: 'width:60px;height:2px;background:linear-gradient(90deg,#8a5cf6,#c084fc);margin:0 auto;border-radius:1px;' })
             ]),
 
