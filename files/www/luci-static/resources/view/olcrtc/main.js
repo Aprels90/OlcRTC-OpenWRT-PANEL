@@ -1263,17 +1263,29 @@ return view.extend({
             }
         }
 
+        function updateLogsSelectionState() {
+            var selection = document.getSelection && document.getSelection();
+            var selectedInLogs = false;
+            if (selection && selection.rangeCount > 0) {
+                for (var i = 0; i < selection.rangeCount; i++) {
+                    var range = selection.getRangeAt(i);
+                    if (range && !range.collapsed &&
+                        (range.intersectsNode(logsEl) || logsEl.contains(range.commonAncestorContainer))) {
+                        selectedInLogs = true;
+                        break;
+                    }
+                }
+            }
+            if (selectedInLogs) {
+                lockLogsSelection();
+            } else if (self._logsSelectionLocked || self._logsInputLock) {
+                unlockLogsSelection();
+            }
+        }
+
         logsEl.addEventListener('selectstart', lockLogsSelection);
         logsEl.addEventListener('mousedown', lockLogsSelection);
-        logsEl.addEventListener('mouseup', function () { setTimeout(unlockLogsSelection, 60); });
-        logsEl.addEventListener('mouseleave', function () { setTimeout(unlockLogsSelection, 60); });
-        document.addEventListener('mousedown', lockLogsSelection);
-        document.addEventListener('mouseup', function () { setTimeout(unlockLogsSelection, 60); });
-        document.addEventListener('selectionchange', function () {
-            if (document.getSelection && document.getSelection().toString().length === 0) {
-                setTimeout(unlockLogsSelection, 30);
-            }
-        });
+        document.addEventListener('selectionchange', updateLogsSelectionState);
 
         var logsCard = card('Логи', [logsEl]);
 
