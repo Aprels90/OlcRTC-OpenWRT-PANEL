@@ -369,6 +369,8 @@ return view.extend({
     _logsTimer           : null,
     _statusEl            : null,
     _logsEl              : null,
+    _logsSelectionLocked : false,
+    _pendingLogsText     : null,
     _startBtn            : null,
     _stopBtn             : null,
     _transportSel        : null,
@@ -445,11 +447,25 @@ return view.extend({
             getLogs().then(function (text) {
                 if (!self._logsEl) return;
                 var el = self._logsEl;
-                var selection = window.getSelection && window.getSelection();
-                var hasSelection = selection && selection.rangeCount &&
-                    !selection.isCollapsed &&
-                    el.contains(selection.anchorNode) && el.contains(selection.focusNode);
-                if (hasSelection || el.textContent === text) return;
+                var selection = document.getSelection && document.getSelection();
+                var hasSelectionInLogs = !!(selection && selection.rangeCount > 0 &&
+                    Array.prototype.some.call({ length: selection.rangeCount }, function (_, idx) {
+                        var range = selection.getRangeAt(idx);
+                        return range && !range.collapsed &&
+                            (range.intersectsNode(el) || el.contains(range.commonAncestorContainer));
+                    }));
+
+                if (self._logsSelectionLocked || hasSelectionInLogs) {
+                    self._pendingLogsText = text;
+                    return;
+                }
+
+                if (self._pendingLogsText && self._pendingLogsText !== text) {
+                    text = self._pendingLogsText;
+                }
+                self._pendingLogsText = null;
+
+                if (el.textContent === text) return;
                 var atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
                 el.textContent = text;
                 if (atBottom) el.scrollTop = el.scrollHeight;
@@ -1224,6 +1240,24 @@ return view.extend({
                    'margin:0;border:1px solid rgba(138,92,246,0.2);'
         }, 'Загрузка логов...');
         self._logsEl = logsEl;
+
+        function refreshLogsSelectionLock() {
+            var selection = document.getSelection && document.getSelection();
+            self._logsSelectionLocked = !!(selection && selection.rangeCount > 0 &&
+                Array.prototype.some.call({ length: selection.rangeCount }, function (_, idx) {
+                    var range = selection.getRangeAt(idx);
+                    return range && !range.collapsed &&
+                        (range.intersectsNode(logsEl) || logsEl.contains(range.commonAncestorContainer));
+                }));
+            if (!self._logsSelectionLocked && self._pendingLogsText) {
+                self._logsEl.textContent = self._pendingLogsText;
+                self._pendingLogsText = null;
+            }
+        }
+
+        logsEl.addEventListener('mousedown', function () { self._logsSelectionLocked = true; });
+        logsEl.addEventListener('mouseup', function () { setTimeout(refreshLogsSelectionLock, 50); });
+        document.addEventListener('selectionchange', refreshLogsSelectionLock);
 
         var logsCard = card('Логи', [logsEl]);
 
