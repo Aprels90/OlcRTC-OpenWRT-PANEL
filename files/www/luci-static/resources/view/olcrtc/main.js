@@ -372,6 +372,7 @@ return view.extend({
     _logsSelectionLocked : false,
     _pendingLogsText     : null,
     _logsInputLock       : false,
+    _logsTouchLock       : false,
     _startBtn            : null,
     _stopBtn             : null,
     _transportSel        : null,
@@ -1239,7 +1240,8 @@ return view.extend({
             class: 'olcrtc-logs',
             style: 'background:#0a0518;color:#c4a0ff;padding:12px;max-height:360px;overflow-y:auto;' +
                    'border-radius:6px;font-size:0.78em;white-space:pre-wrap;word-break:break-all;' +
-                   'margin:0;border:1px solid rgba(138,92,246,0.2);'
+                   'margin:0;border:1px solid rgba(138,92,246,0.2);' +
+                   '-webkit-user-select:text;user-select:text;'
         }, 'Загрузка логов...');
         self._logsEl = logsEl;
 
@@ -1248,7 +1250,13 @@ return view.extend({
             self._logsInputLock = true;
         }
 
+        function lockLogsTouch() {
+            self._logsTouchLock = true;
+            lockLogsSelection();
+        }
+
         function unlockLogsSelection() {
+            if (self._logsTouchLock) return;
             self._logsSelectionLocked = false;
             self._logsInputLock = false;
             if (self._pendingLogsText) {
@@ -1276,15 +1284,28 @@ return view.extend({
                     }
                 }
             }
+            if (!selectedInLogs && selection && selection.toString && selection.toString().length > 0)
+                selectedInLogs = true;
             if (selectedInLogs) {
                 lockLogsSelection();
-            } else if (self._logsSelectionLocked || self._logsInputLock) {
+            } else if (!self._logsTouchLock && (self._logsSelectionLocked || self._logsInputLock)) {
                 unlockLogsSelection();
             }
         }
 
+        function finishLogsTouch() {
+            setTimeout(function () {
+                self._logsTouchLock = false;
+                updateLogsSelectionState();
+            }, 350);
+        }
+
         logsEl.addEventListener('selectstart', lockLogsSelection);
         logsEl.addEventListener('mousedown', lockLogsSelection);
+        logsEl.addEventListener('touchstart', lockLogsTouch, { passive: true });
+        logsEl.addEventListener('touchend', finishLogsTouch, { passive: true });
+        logsEl.addEventListener('pointerdown', lockLogsTouch);
+        logsEl.addEventListener('pointerup', finishLogsTouch);
         document.addEventListener('selectionchange', updateLogsSelectionState);
 
         var logsCard = card('Логи', [logsEl]);
