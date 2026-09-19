@@ -371,6 +371,7 @@ return view.extend({
     _logsEl              : null,
     _logsSelectionLocked : false,
     _pendingLogsText     : null,
+    _logsInputLock       : false,
     _startBtn            : null,
     _stopBtn             : null,
     _transportSel        : null,
@@ -447,7 +448,7 @@ return view.extend({
             getLogs().then(function (text) {
                 if (!self._logsEl) return;
                 var el = self._logsEl;
-                if (self._logsSelectionLocked) {
+                if (self._logsSelectionLocked || self._logsInputLock) {
                     self._pendingLogsText = text;
                     return;
                 }
@@ -1244,10 +1245,12 @@ return view.extend({
 
         function lockLogsSelection() {
             self._logsSelectionLocked = true;
+            self._logsInputLock = true;
         }
 
         function unlockLogsSelection() {
             self._logsSelectionLocked = false;
+            self._logsInputLock = false;
             if (self._pendingLogsText) {
                 var pendingText = self._pendingLogsText;
                 self._pendingLogsText = null;
@@ -1264,6 +1267,8 @@ return view.extend({
         logsEl.addEventListener('mousedown', lockLogsSelection);
         logsEl.addEventListener('mouseup', function () { setTimeout(unlockLogsSelection, 60); });
         logsEl.addEventListener('mouseleave', function () { setTimeout(unlockLogsSelection, 60); });
+        document.addEventListener('mousedown', lockLogsSelection);
+        document.addEventListener('mouseup', function () { setTimeout(unlockLogsSelection, 60); });
         document.addEventListener('selectionchange', function () {
             if (document.getSelection && document.getSelection().toString().length === 0) {
                 setTimeout(unlockLogsSelection, 30);
