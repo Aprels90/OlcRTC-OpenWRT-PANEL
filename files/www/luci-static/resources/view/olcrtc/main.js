@@ -348,6 +348,7 @@ var RESPONSIVE_STYLE =
         '.olcrtc-server-cards > div:last-child{margin-bottom:0;}' +
         '.olcrtc-matrix-wrap{overflow-x:auto;}' +
         '.olcrtc-matrix-wrap table{min-width:440px;}' +
+        '.olcrtc-log-refresh{display:block!important;width:100%;box-sizing:border-box;margin-bottom:10px!important;}' +
         '.olcrtc-logs{max-height:280px!important;font-size:0.72em!important;}' +
     '}';
 
@@ -1229,7 +1230,7 @@ return view.extend({
 
         var refreshLogsBtn = E('button', {
             type: 'button',
-            class: 'btn cbi-button cbi-button-apply',
+            class: 'olcrtc-log-refresh btn cbi-button cbi-button-apply',
             title: 'Загрузить последние записи лога',
             style: 'display:inline-block!important;margin:0 0 10px 0!important;padding:6px 12px!important;color:#fff!important;background:#8a5cf6!important;border:1px solid #b388ff!important;cursor:pointer!important;',
             click: ui.createHandlerFn(self, function () { return self._refreshLogs(); })
