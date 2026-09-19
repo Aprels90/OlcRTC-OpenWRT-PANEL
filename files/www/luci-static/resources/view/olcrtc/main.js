@@ -444,36 +444,18 @@ return view.extend({
             getStatus().then(function (s) { self._updateUI(s); });
         }, 300);
 
-        if (self._logsTimer) clearInterval(self._logsTimer);
-        self._logsTimer = setInterval(function () {
-            getLogs().then(function (text) {
-                if (!self._logsEl) return;
-                var el = self._logsEl;
-                if (self._logsSelectionLocked || self._logsInputLock) {
-                    self._pendingLogsText = text;
-                    return;
-                }
+    },
 
-                if (self._pendingLogsText && self._pendingLogsText !== text) {
-                    text = self._pendingLogsText;
-                }
-                self._pendingLogsText = null;
-
-                if (el.textContent === text) return;
-                var atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-
-                var textNode = el.firstChild;
-                if (textNode && textNode.nodeType === 3) {
-                    if (textNode.data !== text) textNode.data = text;
-                } else {
-                    textNode = document.createTextNode(text);
-                    el.textContent = '';
-                    el.appendChild(textNode);
-                }
-
-                if (atBottom) el.scrollTop = el.scrollHeight;
-            });
-        }, 3000);
+    _refreshLogs: function () {
+        var self = this;
+        if (!self._logsEl) return Promise.resolve();
+        var el = self._logsEl;
+        return getLogs().then(function (text) {
+            if (el.textContent === text) return;
+            var atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+            el.textContent = text;
+            if (atBottom) el.scrollTop = el.scrollHeight;
+        });
     },
 
     _updateTransportSections: function (transport) {
@@ -1245,77 +1227,16 @@ return view.extend({
         }, 'Загрузка логов...');
         self._logsEl = logsEl;
 
-        function lockLogsSelection() {
-            self._logsSelectionLocked = true;
-            self._logsInputLock = true;
-        }
+        var refreshLogsBtn = E('button', {
+            class: 'btn cbi-button cbi-button-apply',
+            style: 'margin-bottom:10px;',
+            click: ui.createHandlerFn(self, function () { return self._refreshLogs(); })
+        }, 'Обновить логи');
 
-        function lockLogsTouch() {
-            self._logsTouchLock = true;
-            lockLogsSelection();
-        }
-
-        function unlockLogsSelection() {
-            if (self._logsTouchLock) return;
-            self._logsSelectionLocked = false;
-            self._logsInputLock = false;
-            if (self._pendingLogsText) {
-                var pendingText = self._pendingLogsText;
-                self._pendingLogsText = null;
-                var textNode = logsEl.firstChild;
-                if (textNode && textNode.nodeType === 3) {
-                    textNode.data = pendingText;
-                } else {
-                    logsEl.textContent = pendingText;
-                }
-            }
-        }
-
-        function updateLogsSelectionState() {
-            var selection = document.getSelection && document.getSelection();
-            var selectedInLogs = false;
-            if (selection && selection.rangeCount > 0) {
-                for (var i = 0; i < selection.rangeCount; i++) {
-                    var range = selection.getRangeAt(i);
-                    if (range && !range.collapsed &&
-                        (range.intersectsNode(logsEl) || logsEl.contains(range.commonAncestorContainer))) {
-                        selectedInLogs = true;
-                        break;
-                    }
-                }
-            }
-            if (!selectedInLogs && selection && selection.toString && selection.toString().length > 0)
-                selectedInLogs = true;
-            if (selectedInLogs) {
-                lockLogsSelection();
-            } else if (!self._logsTouchLock && (self._logsSelectionLocked || self._logsInputLock)) {
-                unlockLogsSelection();
-            }
-        }
-
-        function finishLogsTouch() {
-            updateLogsSelectionState();
-        }
-
-        function releaseLogsAfterOutsideTouch(event) {
-            if (logsEl.contains(event.target)) return;
-            self._logsTouchLock = false;
-            updateLogsSelectionState();
-        }
-
-        logsEl.addEventListener('selectstart', lockLogsSelection);
-        logsEl.addEventListener('mousedown', lockLogsSelection);
-        logsEl.addEventListener('touchstart', lockLogsTouch, { passive: true });
-        logsEl.addEventListener('touchend', finishLogsTouch, { passive: true });
-        logsEl.addEventListener('pointerdown', lockLogsTouch);
-        logsEl.addEventListener('pointerup', finishLogsTouch);
-        document.addEventListener('touchstart', releaseLogsAfterOutsideTouch, { passive: true });
-        document.addEventListener('pointerdown', releaseLogsAfterOutsideTouch);
-        document.addEventListener('selectionchange', updateLogsSelectionState);
-
-        var logsCard = card('Логи', [logsEl]);
+        var logsCard = card('Логи', [refreshLogsBtn, logsEl]);
 
         self._startPolling();
+        self._refreshLogs();
 
         /* Загрузить сохранённые подписки */
         var savedSubs = uci.sections('olcrtc', 'subscription') || [];
