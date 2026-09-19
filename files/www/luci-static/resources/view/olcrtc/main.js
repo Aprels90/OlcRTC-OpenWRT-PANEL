@@ -445,6 +445,11 @@ return view.extend({
             getLogs().then(function (text) {
                 if (!self._logsEl) return;
                 var el = self._logsEl;
+                var selection = window.getSelection && window.getSelection();
+                var hasSelection = selection && selection.rangeCount &&
+                    !selection.isCollapsed &&
+                    el.contains(selection.anchorNode) && el.contains(selection.focusNode);
+                if (hasSelection || el.textContent === text) return;
                 var atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
                 el.textContent = text;
                 if (atBottom) el.scrollTop = el.scrollHeight;
