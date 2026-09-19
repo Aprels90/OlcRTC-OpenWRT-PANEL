@@ -447,15 +447,7 @@ return view.extend({
             getLogs().then(function (text) {
                 if (!self._logsEl) return;
                 var el = self._logsEl;
-                var selection = document.getSelection && document.getSelection();
-                var hasSelectionInLogs = !!(selection && selection.rangeCount > 0 &&
-                    Array.prototype.some.call({ length: selection.rangeCount }, function (_, idx) {
-                        var range = selection.getRangeAt(idx);
-                        return range && !range.collapsed &&
-                            (range.intersectsNode(el) || el.contains(range.commonAncestorContainer));
-                    }));
-
-                if (self._logsSelectionLocked || hasSelectionInLogs) {
+                if (self._logsSelectionLocked) {
                     self._pendingLogsText = text;
                     return;
                 }
@@ -1250,15 +1242,13 @@ return view.extend({
         }, 'Загрузка логов...');
         self._logsEl = logsEl;
 
-        function refreshLogsSelectionLock() {
-            var selection = document.getSelection && document.getSelection();
-            self._logsSelectionLocked = !!(selection && selection.rangeCount > 0 &&
-                Array.prototype.some.call({ length: selection.rangeCount }, function (_, idx) {
-                    var range = selection.getRangeAt(idx);
-                    return range && !range.collapsed &&
-                        (range.intersectsNode(logsEl) || logsEl.contains(range.commonAncestorContainer));
-                }));
-            if (!self._logsSelectionLocked && self._pendingLogsText) {
+        function lockLogsSelection() {
+            self._logsSelectionLocked = true;
+        }
+
+        function unlockLogsSelection() {
+            self._logsSelectionLocked = false;
+            if (self._pendingLogsText) {
                 var pendingText = self._pendingLogsText;
                 self._pendingLogsText = null;
                 var textNode = logsEl.firstChild;
@@ -1270,9 +1260,15 @@ return view.extend({
             }
         }
 
-        logsEl.addEventListener('mousedown', function () { self._logsSelectionLocked = true; });
-        logsEl.addEventListener('mouseup', function () { setTimeout(refreshLogsSelectionLock, 50); });
-        document.addEventListener('selectionchange', refreshLogsSelectionLock);
+        logsEl.addEventListener('selectstart', lockLogsSelection);
+        logsEl.addEventListener('mousedown', lockLogsSelection);
+        logsEl.addEventListener('mouseup', function () { setTimeout(unlockLogsSelection, 60); });
+        logsEl.addEventListener('mouseleave', function () { setTimeout(unlockLogsSelection, 60); });
+        document.addEventListener('selectionchange', function () {
+            if (document.getSelection && document.getSelection().toString().length === 0) {
+                setTimeout(unlockLogsSelection, 30);
+            }
+        });
 
         var logsCard = card('Логи', [logsEl]);
 
