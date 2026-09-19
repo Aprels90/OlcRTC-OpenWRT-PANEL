@@ -467,7 +467,16 @@ return view.extend({
 
                 if (el.textContent === text) return;
                 var atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-                el.textContent = text;
+
+                var textNode = el.firstChild;
+                if (textNode && textNode.nodeType === 3) {
+                    if (textNode.data !== text) textNode.data = text;
+                } else {
+                    textNode = document.createTextNode(text);
+                    el.textContent = '';
+                    el.appendChild(textNode);
+                }
+
                 if (atBottom) el.scrollTop = el.scrollHeight;
             });
         }, 3000);
@@ -1250,8 +1259,14 @@ return view.extend({
                         (range.intersectsNode(logsEl) || logsEl.contains(range.commonAncestorContainer));
                 }));
             if (!self._logsSelectionLocked && self._pendingLogsText) {
-                self._logsEl.textContent = self._pendingLogsText;
+                var pendingText = self._pendingLogsText;
                 self._pendingLogsText = null;
+                var textNode = logsEl.firstChild;
+                if (textNode && textNode.nodeType === 3) {
+                    textNode.data = pendingText;
+                } else {
+                    logsEl.textContent = pendingText;
+                }
             }
         }
 
