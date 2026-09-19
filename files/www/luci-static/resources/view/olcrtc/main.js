@@ -1294,10 +1294,13 @@ return view.extend({
         }
 
         function finishLogsTouch() {
-            setTimeout(function () {
-                self._logsTouchLock = false;
-                updateLogsSelectionState();
-            }, 350);
+            updateLogsSelectionState();
+        }
+
+        function releaseLogsAfterOutsideTouch(event) {
+            if (logsEl.contains(event.target)) return;
+            self._logsTouchLock = false;
+            updateLogsSelectionState();
         }
 
         logsEl.addEventListener('selectstart', lockLogsSelection);
@@ -1306,6 +1309,8 @@ return view.extend({
         logsEl.addEventListener('touchend', finishLogsTouch, { passive: true });
         logsEl.addEventListener('pointerdown', lockLogsTouch);
         logsEl.addEventListener('pointerup', finishLogsTouch);
+        document.addEventListener('touchstart', releaseLogsAfterOutsideTouch, { passive: true });
+        document.addEventListener('pointerdown', releaseLogsAfterOutsideTouch);
         document.addEventListener('selectionchange', updateLogsSelectionState);
 
         var logsCard = card('Логи', [logsEl]);
