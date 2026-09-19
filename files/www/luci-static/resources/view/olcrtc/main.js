@@ -1228,8 +1228,10 @@ return view.extend({
         self._logsEl = logsEl;
 
         var refreshLogsBtn = E('button', {
+            type: 'button',
             class: 'btn cbi-button cbi-button-apply',
-            style: 'margin-bottom:10px;',
+            title: 'Загрузить последние записи лога',
+            style: 'display:inline-block!important;margin:0 0 10px 0!important;padding:6px 12px!important;color:#fff!important;background:#8a5cf6!important;border:1px solid #b388ff!important;cursor:pointer!important;',
             click: ui.createHandlerFn(self, function () { return self._refreshLogs(); })
         }, 'Обновить логи');
 
